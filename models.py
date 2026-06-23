@@ -17,12 +17,22 @@ class BookingRequest(BaseModel):
     phone: Optional[str] = None
 
 
-class AvailabilityRequest(BaseModel):
-    shop_id: int
-    service_id: int
-    start_date: str  # YYYY-MM-DD
-    end_date: str  # YYYY-MM-DD
-    party_size: int
+async def step1_availability(
+    shop_id: int,
+    service_id: int,
+    start_date: str,
+    end_date: Optional[str] = None,
+    party_size: Optional[int] = 2,
+):
+    params = {
+        "shop_id": shop_id,
+        "service_id": service_id,
+        "start_date": start_date,
+    }
+    if end_date:
+        params["end_date"] = end_date
+    if party_size:
+        params["party_size"] = party_size
 
 
 class VerifyRequest(BaseModel):
