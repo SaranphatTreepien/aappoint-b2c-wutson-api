@@ -1,6 +1,7 @@
 # aappoint.py
 import httpx
 from models import BookingRequest
+from typing import Optional
 
 BASE_URL = "https://dev.aappoint.me"
 
@@ -9,20 +10,21 @@ PATH_B = {(241, 400)}
 
 
 async def step1_availability(
-    shop_id: int, service_id: int, start_date: str, end_date: str, party_size: int
+    shop_id: int,
+    service_id: int,
+    start_date: str,
+    end_date: Optional[str] = None,
+    party_size: Optional[int] = 2,
 ):
-    url = f"{BASE_URL}/rwg-payment/availability"
     params = {
         "shop_id": shop_id,
         "service_id": service_id,
         "start_date": start_date,
-        "end_date": end_date,
-        "party_size": party_size,
     }
-    async with httpx.AsyncClient() as client:
-        res = await client.get(url, params=params)
-        res.raise_for_status()
-        return res.json()
+    if end_date:
+        params["end_date"] = end_date
+    if party_size:
+        params["party_size"] = party_size
 
 
 async def step2_get_detail(
