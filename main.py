@@ -31,36 +31,53 @@ async def check_availability(
 @app.post("/book", response_model=BookingResponse)
 async def book(req: BookingRequest):
     try:
-        # Route Path B vs Path A
+        print("=" * 80)
+        print("BOOK REQUEST")
+        print(req.model_dump())
+        print("=" * 80)
+
         if (req.shop_id, req.service_id) in PATH_B:
+            print("PATH B")
+
             result = await book_path_b(
-                req.shop_id, req.service_id, req.start_sec, req.party_size, req.zone_id
+                req.shop_id,
+                req.service_id,
+                req.start_sec,
+                req.party_size,
+                req.zone_id,
             )
+
         else:
-            # Path A requires contact info
+            print("PATH A")
+
             if not all([req.first_name, req.last_name, req.email, req.phone]):
                 raise HTTPException(
                     status_code=422,
                     detail="Path A requires first_name, last_name, email, phone",
                 )
+
             result = await book_path_a(
-                req, req.start_sec, req.zone_id, req.duration_sec
+                req,
+                req.start_sec,
+                req.zone_id,
+                req.duration_sec,
             )
+
+        print("BOOK RESULT")
+        print(result)
 
         return BookingResponse(**result)
 
-    except ValueError as e:
-        error_msg = str(e)
-        # Fallback conditions
-        if "username-exists" in error_msg or "product-unavailable" in error_msg:
-            redirect_url = f"https://marketplace-dev.aappoint.me/rwg/{req.shop_id}/service/{req.service_id}"
-            return BookingResponse(
-                status="fallback", path="A", redirect_url=redirect_url, error=error_msg
-            )
-        raise HTTPException(status_code=400, detail=error_msg)
-
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+
+        print("BOOK ERROR")
+        traceback.print_exc()
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        )
 
 
 @app.post("/verify")
