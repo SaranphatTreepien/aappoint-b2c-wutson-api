@@ -34,7 +34,7 @@ async def book(req: BookingRequest):
         # Route Path B vs Path A
         if (req.shop_id, req.service_id) in PATH_B:
             result = await book_path_b(
-                req.shop_id, req.service_id, req.start_sec, req.party_size
+                req.shop_id, req.service_id, req.start_sec, req.party_size, req.zone_id
             )
         else:
             # Path A requires contact info
@@ -69,4 +69,4 @@ async def verify_payment(req: VerifyRequest):
         result = await step4_verify(req.shop_id, req.event_id, req.po_id)
         return result
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))

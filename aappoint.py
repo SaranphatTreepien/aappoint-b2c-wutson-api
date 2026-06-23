@@ -45,7 +45,7 @@ async def step1_availability(
 
 
 async def step2_get_detail(
-    shop_id: int, service_id: int, start_sec: int, party_size: int
+    shop_id: int, service_id: int, start_sec: int, party_size: int, zone_id: str
 ):
     url = f"{BASE_URL}/rwg-payment"
     params = {
@@ -53,6 +53,7 @@ async def step2_get_detail(
         "service_id": service_id,
         "start_sec": start_sec,
         "party_size": party_size,
+        "zone": zone_id,  # ← เพิ่ม ตรงกับ PowerShell ตัวอย่างใน PDF
     }
     async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
 
@@ -61,10 +62,14 @@ async def step2_get_detail(
         return res.json()
 
 
-async def book_path_b(shop_id: int, service_id: int, start_sec: int, party_size: int):
+async def book_path_b(
+    shop_id: int, service_id: int, start_sec: int, party_size: int, free_zone_id: str
+):
     """Path B: 241/400 only — 2 steps then return redirect_url"""
     # STEP 2 - verify free
-    detail = await step2_get_detail(shop_id, service_id, start_sec, party_size)
+    detail = await step2_get_detail(
+        shop_id, service_id, start_sec, party_size, free_zone_id
+    )
 
     if detail["total_price"] != "0" or detail["total_deposit"] != "0":
         raise ValueError(f"Expected free booking but got total={detail['total_price']}")
@@ -106,7 +111,7 @@ async def book_path_a(
 ):
     # STEP 2
     detail = await step2_get_detail(
-        req.shop_id, req.service_id, start_sec, req.party_size
+        req.shop_id, req.service_id, start_sec, req.party_size, zone_id
     )
 
     table_id = detail["tables"][0]["id"] if detail.get("tables") else None
