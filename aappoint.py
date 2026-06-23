@@ -16,6 +16,7 @@ async def step1_availability(
     end_date: Optional[str] = None,
     party_size: Optional[int] = 2,
 ):
+    url = f"{BASE_URL}/rwg-payment/availability"
     params = {
         "shop_id": shop_id,
         "service_id": service_id,
@@ -25,6 +26,22 @@ async def step1_availability(
         params["end_date"] = end_date
     if party_size:
         params["party_size"] = party_size
+
+    print(f"Calling: {url} params={params}")
+
+    async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
+
+        try:
+            res = await client.get(url, params=params)
+            res.encoding = "utf-8"  # ← เพิ่มบรรทัดนี้
+            print(f"Status: {res.status_code}")
+            print(f"Body: {res.text}")
+            if res.status_code != 200:
+                raise ValueError(res.text)
+            return res.json()
+        except httpx.RequestError as e:
+            print(f"Request error: {e}")
+            raise
 
 
 async def step2_get_detail(
@@ -37,7 +54,8 @@ async def step2_get_detail(
         "start_sec": start_sec,
         "party_size": party_size,
     }
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
+
         res = await client.get(url, params=params)
         res.raise_for_status()
         return res.json()
@@ -64,7 +82,8 @@ async def book_path_b(shop_id: int, service_id: int, start_sec: int, party_size:
 
 async def step3_checkout(payload: dict):
     url = f"{BASE_URL}/rwg-payment/checkout"
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
+
         res = await client.post(url, json=payload)
         raw = res.text
         if res.status_code != 200:
@@ -75,7 +94,8 @@ async def step3_checkout(payload: dict):
 async def step4_verify(shop_id: int, event_id: int, po_id: int):
     url = f"{BASE_URL}/rwg-payment/payment-result"
     params = {"shop_id": shop_id, "event_id": event_id, "po_id": po_id}
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(verify=False, timeout=30.0) as client:
+
         res = await client.get(url, params=params)
         res.raise_for_status()
         return res.json()
@@ -84,11 +104,13 @@ async def step4_verify(shop_id: int, event_id: int, po_id: int):
 async def book_path_a(
     req: BookingRequest, start_sec: int, zone_id: str, duration_sec: int
 ):
-    """Path A: deposit API flow STEP 1-4"""
     # STEP 2
     detail = await step2_get_detail(
         req.shop_id, req.service_id, start_sec, req.party_size
     )
+
+    table_id = detail["tables"][0]["id"] if detail.get("tables") else None
+    product_id = detail["products"][0]["id"] if detail.get("products") else None
 
     # STEP 3
     payload = {
@@ -98,6 +120,11 @@ async def book_path_a(
         "duration_sec": duration_sec,
         "party_size": req.party_size,
         "zone": zone_id,
+        "table_id": table_id,
+        "selected_products": (
+            [{"shop_product_id": product_id, "amount": 1}] if product_id else []
+        ),
+        "optional_products": [],
         "first_name": req.first_name,
         "last_name": req.last_name,
         "email": req.email,
@@ -110,8 +137,6 @@ async def book_path_a(
         "result_url": "https://dev-sui-booking-point-collect-hd3yycn2oq-as.a.run.app/mock",
     }
     checkout = await step3_checkout(payload)
-
-    # fix \u0026 → &
     checkout_url = checkout.get("checkout_url", "").replace("\\u0026", "&")
 
     return {

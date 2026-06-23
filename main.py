@@ -11,13 +11,19 @@ async def health():
     return {"status": "ok"}
 
 
-@app.post("/availability")
-async def check_availability(req: AvailabilityRequest):
+@app.get("/availability")
+async def check_availability(
+    shop_id: int,
+    service_id: int,
+    start_date: str,
+    end_date: str = None,
+    party_size: int = 2,
+):
     try:
         result = await step1_availability(
-            req.shop_id, req.service_id, req.start_date, req.end_date, req.party_size
+            shop_id, service_id, start_date, end_date, party_size
         )
-        return result
+        return {"available_slots": result.get("available_slots", [])}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
