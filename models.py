@@ -10,10 +10,11 @@ class BookingRequest(BaseModel):
     start_sec: int
     duration_sec: int
     zone_id: str
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
+    # required ทั้ง Path A และ Path B
+    first_name: str  # ← ไม่ Optional แล้ว
+    last_name: str
+    email: str
+    phone: str
 
 
 class AvailabilityRequest(BaseModel):

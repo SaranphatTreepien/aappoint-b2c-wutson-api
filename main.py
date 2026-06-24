@@ -50,6 +50,11 @@ async def book(req: BookingRequest):
     log.info(
         f"[BOOK] party={req.party_size} start_sec={req.start_sec} zone_id='{req.zone_id}'"
     )
+    if not all([req.first_name, req.last_name, req.email, req.phone]):
+        raise HTTPException(
+            status_code=422,
+            detail="requires first_name, last_name, email, phone",
+        )
     if req.first_name:
         log.info(
             f"[BOOK] contact={req.first_name} {req.last_name} | {req.email} | {req.phone}"
@@ -64,18 +69,16 @@ async def book(req: BookingRequest):
                 req.start_sec,
                 req.party_size,
                 req.zone_id,
+                req.first_name,  # ← เพิ่ม
+                req.last_name,  # ← เพิ่ม
+                req.email,  # ← เพิ่ม
+                req.phone,  # ← เพิ่ม
             )
         else:
             log.info("[BOOK] PATH A (deposit)")
-            if not all([req.first_name, req.last_name, req.email, req.phone]):
-                raise HTTPException(
-                    status_code=422,
-                    detail="Path A requires first_name, last_name, email, phone",
-                )
-            result = await book_path_a(
+            result = await book_path_a(  # ← ยังขาดอยู่!
                 req, req.start_sec, req.zone_id, req.duration_sec
-            )
-
+            )  # ← ยังขาดอยู่!
         log.info(f"[BOOK] RESULT — status={result.get('status')}")
         if result.get("event_id"):
             log.info(f"[BOOK] event_id={result['event_id']} po_id={result['po_id']}")

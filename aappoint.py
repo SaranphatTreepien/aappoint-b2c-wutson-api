@@ -92,7 +92,15 @@ async def step4_verify(shop_id: int, event_id: int, po_id: int):
 
 
 async def book_path_b(
-    shop_id: int, service_id: int, start_sec: int, party_size: int, zone_id: str
+    shop_id: int,
+    service_id: int,
+    start_sec: int,
+    party_size: int,
+    zone_id: str,
+    first_name: str,
+    last_name: str,
+    email: str,
+    phone: str,  # ← เพิ่ม
 ):
     """Path B: 241/400 — ต้อง checkout ด้วย แต่ total=0"""
     log.info(f"[PATH B] shop={shop_id} service={service_id} zone='{zone_id}'")
@@ -122,10 +130,10 @@ async def book_path_b(
             [{"shop_product_id": product_id, "amount": 1}] if product_id else []
         ),
         "optional_products": [],
-        "first_name": "Guest",
-        "last_name": "Watson",
-        "email": "guest@drwatson.ai",
-        "phone": "+66000000000",
+        "first_name": first_name,  # ← จาก user จริง
+        "last_name": last_name,
+        "email": email,
+        "phone": phone,
         "accept_late_time": True,
         "accept_no_refund": True,
         "accept_news": False,
