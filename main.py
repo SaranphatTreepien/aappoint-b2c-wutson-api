@@ -92,6 +92,16 @@ async def book(req: BookingRequest):
 
     except HTTPException:
         raise
+    except ValueError as e:
+        error_msg = str(e)
+        redirect_url = f"https://marketplace-dev.aappoint.me/rwg/{req.shop_id}/service/{req.service_id}"
+        log.warning(f"[BOOK] FALLBACK — {error_msg}")
+        return BookingResponse(
+            status="fallback",
+            path="A" if (req.shop_id, req.service_id) not in PATH_B else "B",
+            redirect_url=redirect_url,
+            error=error_msg,
+        )
     except Exception as e:
         import traceback
 
